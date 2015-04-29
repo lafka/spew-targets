@@ -19,21 +19,20 @@ if [ ! -f "$BUILDROOT/debian/jessie/buildt" ]; then
 fi
 
 # "include" debian
-$SRCDIR/../../debian/jessie/build.sh --include sudo,openjdk-7-jre-headless
+"$SRCDIR/../../debian/jessie/build.sh" --include sudo,openjdk-7-jre-headless
 
 tmpdir=$(mktemp -d)
 curl -o "$tmpdir/$RIAK_FILE" http://s3.amazonaws.com/downloads.basho.com/riak/${RIAK_MAJOR}/${RIAK_MINOR}/debian/7/$RIAK_FILE
-cp "$SRCDIR/files.sha" $tmpdir
-cd $tmpdir
+cp "$SRCDIR/files.sha" "$tmpdir"
+cd "$tmpdir"
 /usr/bin/core_perl/shasum -c < files.sha
 
-cp $tmpdir/riak_2.0.5-1_amd64.deb $BUILDDIR/
-sudo chroot $BUILDDIR dpkg -i $RIAK_FILE
-sudo chroot $BUILDDIR apt-get clean
-rm -rf $tmpdir
-sudo rm $BUILDDIR/$RIAK_FILE
+SPATH=/bin:/usr/bin:/sbin:/usr/sbin
+sudo cp "$tmpdir/$RIAK_FILE" "$BUILDDIR/"
+rm -rf "$tmpdir"
+sudo PATH=$SPATH chroot "$BUILDDIR" /bin/bash -c "dpkg -i /$RIAK_FILE"
+sudo PATH=$SPATH chroot "$BUILDDIR" /bin/bash -c "apt-get clean"
+sudo rm "$BUILDDIR/$RIAK_FILE"
 
-sudo chroot /tmp/builds/riak/2.0.5 /bin/bash -c "echo root:rootsgrowintheground | chpasswd"
-sudo chroot $BUILDDIR systemctl enable riak
-
-rsync -avh $SRCDIR/files/ $BUILDDIR
+sudo chroot "$BUILDDIR" /bin/bash -c "echo root:rootsgrowintheground | chpasswd"
+sudo chroot "$BUILDDIR" /bin/bash -c 'systemctl enable riak'
